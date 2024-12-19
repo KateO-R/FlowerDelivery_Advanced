@@ -11,6 +11,14 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+class CartItem(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Связь с пользователем
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)  # Связь с товаром
+    quantity = models.PositiveIntegerField(default=1)  # Количество товара в корзине
+
+    def __str__(self):
+        return f"{self.product.name} ({self.quantity}) for {self.user.username}"
+
 
 class Order(models.Model):
     STATUS_CHOICES = [

@@ -1,0 +1,18 @@
+{% extends "orders/base.html" %}
+
+{% block content %}
+<h2>Welcome, {{ user.username }}!</h2>
+<p>Your email: {{ user.email }}</p>
+<p>Your phone: {{ user.profile.phone_number }}</p>
+
+{% if orders %}
+    <h3>Your orders:</h3>
+    <ul>
+        {% for order in orders %}
+        <li>Order #{{ order.id }} - {{ order.status }} - {{ order.order_date }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Here is empty for now. Let’s decorate everything with flowers!</p>
+{% endif %}
+{% endblock %}

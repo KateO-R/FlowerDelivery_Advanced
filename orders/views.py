@@ -20,6 +20,10 @@ def signup(request):
     return render(request, 'orders/signup.html', {'form': form})
 
 @login_required
+def profile(request):
+    return render(request, 'orders/profile.html')
+
+@login_required
 def product_list(request):
     products = Product.objects.all()
     return render(request, 'orders/product_list.html', {'products': products})
@@ -44,3 +48,4 @@ def create_order(request):
 def order_history(request):
     orders = Order.objects.filter(user=request.user)
     return render(request, 'orders/order_history.html', {'orders': orders})
+

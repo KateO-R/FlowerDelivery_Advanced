@@ -15,7 +15,12 @@
             <li class="order-item">
                 <strong>Order #{{ order.id }}</strong> -
                 <span class="order-status">{{ order.status }}</span> -
-                <span class="order-date">{{ order.order_date }}</span>
+                <span class="order-date">{{ order.created_at|date:"Y-m-d H:i" }}</span>
+                <ul>
+                    {% for product in order.products.all %}
+                    <li>{{ product.name }} (x{{ product.orderproduct_set.first.quantity }})</li>
+                    {% endfor %}
+                </ul>
             </li>
             {% endfor %}
         </ul>

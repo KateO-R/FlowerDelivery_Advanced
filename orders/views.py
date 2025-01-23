@@ -26,7 +26,8 @@ def signup(request):
 
 @login_required
 def profile(request):
-    return render(request, 'orders/profile.html')
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'orders/profile.html', {'orders': orders})
 
 @login_required
 def product_list(request):
@@ -38,27 +39,66 @@ def product_list(request):
 def cart(request):
     cart_items = CartItem.objects.filter(user=request.user)  # Получаем товары в корзине текущего пользователя
     total_price = sum(item.product.price * item.quantity for item in cart_items)  # Общая сумма
+    is_empty = cart_items.count() == 0  # Проверяем, пустая ли корзина
+    message = None
 
-    if request.method == 'POST':
+    # Интервалы доставки
+    delivery_times = ['09:00-12:00', '12:00-15:00', '15:00-18:00', '18:00-21:00']
+
+    if request.method == 'POST' and not is_empty:  # Обработка формы заказа, если корзина не пуста
         form = OrderForm(request.POST)
         if form.is_valid():
             order = form.save(commit=False)
             order.user = request.user
             order.total_price = total_price
             order.save()
-            # Сохраняем товары корзины как часть заказа
+
+            # Добавляем товары в заказ
             for item in cart_items:
                 order.products.add(item.product, through_defaults={'quantity': item.quantity})
-            cart_items.delete()  # Очищаем корзину
-            return render(request, 'orders/order_success.html', {'message': "Thank you for your order. You can track its status in your profile or Telegram bot."})
+            cart_items.delete()  # Очищаем корзину после оформления заказа
+
+            message = "Thank you for your order. You can track its status in your profile or Telegram bot."
+            form = OrderForm()  # Сброс формы после успешного заказа
     else:
         form = OrderForm()
 
     return render(request, 'orders/cart.html', {
         'cart_items': cart_items,
         'total_price': total_price,
+        'is_empty': is_empty,
         'form': form,
+        'delivery_times': delivery_times,  # Добавляем интервалы доставки в шаблон
+        'message': message,
     })
+
+@login_required
+def add_to_cart(request, product_id):
+    product = get_object_or_404(Product, id=product_id)  # Получаем товар или возвращаем 404
+    cart_item, created = CartItem.objects.get_or_create(
+        user=request.user,
+        product=product,
+        defaults={'quantity': 1}
+    )
+    if not created:
+        cart_item.quantity += 1  # Увеличиваем количество, если товар уже в корзине
+        cart_item.save()
+    return redirect('cart')  # Перенаправляем пользователя на страницу корзины
+
+@login_required
+def update_cart(request, cart_item_id, action):
+    cart_item = get_object_or_404(CartItem, id=cart_item_id, user=request.user)
+
+    if action == 'increase':
+        cart_item.quantity += 1
+    elif action == 'decrease' and cart_item.quantity > 1:
+        cart_item.quantity -= 1
+    elif action == 'decrease' and cart_item.quantity == 1:
+        cart_item.delete()
+        return redirect('cart')  # Перенаправляем обратно в корзину, если товар удален
+
+    cart_item.save()
+    return redirect('cart')
 
 
 @login_required

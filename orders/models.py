@@ -38,9 +38,9 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     order_date = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    delivery_date = models.DateField(default="2025-12-12")
-    delivery_time = models.CharField(max_length=502, default="No time chosen")
-    delivery_address = models.CharField(max_length=255, default="No address provided")
+    delivery_date = models.DateField(null=True, blank=True)
+    time = models.CharField(max_length=502, default="No time chosen")
+    address = models.CharField(max_length=255, default="No address provided")
     recipient = models.CharField(max_length=100, default="No recipient provided")
 
     def __str__(self):

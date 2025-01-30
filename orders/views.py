@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import Product, Order
+from .models import Product, Order, OrderProduct
 from .forms import OrderForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
@@ -26,7 +26,7 @@ def signup(request):
 
 @login_required
 def profile(request):
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    orders = Order.objects.filter(user=request.user).order_by('-order_date')
     return render(request, 'orders/profile.html', {'orders': orders})
 
 @login_required
@@ -50,16 +50,27 @@ def cart(request):
         if form.is_valid():
             order = form.save(commit=False)
             order.user = request.user
+            order.delivery_date = form.cleaned_data['delivery_date']
+            order.time = form.cleaned_data['time']
+            order.address = form.cleaned_data['address']
+            order.recipient = form.cleaned_data['recipient']
             order.total_price = total_price
             order.save()
 
             # Добавляем товары в заказ
             for item in cart_items:
-                order.products.add(item.product, through_defaults={'quantity': item.quantity})
+                OrderProduct.objects.create(order=order, product=item.product, quantity=item.quantity)
+                item.total_price = item.product.price * item.quantity
+
+            print("Cart items before delete:", cart_items)  # Отладка перед очисткой корзины
             cart_items.delete()  # Очищаем корзину после оформления заказа
+            print("Cart items after delete:", CartItem.objects.filter(user=request.user))  # Проверяем очистку корзины
 
             message = "Thank you for your order. You can track its status in your profile or Telegram bot."
             form = OrderForm()  # Сброс формы после успешного заказа
+        else:
+            # Если форма невалидна, логируем ошибки для отладки
+            print(form.errors)
     else:
         form = OrderForm()
 

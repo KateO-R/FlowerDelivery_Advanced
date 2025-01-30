@@ -117,3 +117,27 @@ def order_history(request):
     orders = Order.objects.filter(user=request.user)
     return render(request, 'orders/order_history.html', {'orders': orders})
 
+@login_required
+def repeat_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+
+    # Получаем корзину из сессии
+    cart = request.session.get('cart', {})
+
+    for order_product in order.orderproduct_set.all():
+        product_id = str(order_product.product.id)
+
+        # Если товар уже есть в корзине — увеличиваем количество
+        if product_id in cart:
+            cart[product_id]['quantity'] += order_product.quantity
+        else:
+            cart[product_id] = {
+                'name': order_product.product.name,
+                'price': float(order_product.product.price),
+                'quantity': order_product.quantity,
+                'image': order_product.product.image.url
+            }
+
+    # Сохраняем обновленную корзину в сессии
+    request.session['cart'] = cart
+    return redirect('cart')

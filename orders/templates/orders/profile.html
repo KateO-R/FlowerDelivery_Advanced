@@ -15,12 +15,23 @@
             <li class="order-item">
                 <strong>Order #{{ order.id }}</strong> -
                 <span class="order-status">{{ order.status }}</span> -
-                <span class="order-date">{{ order.created_at|date:"Y-m-d H:i" }}</span>
-                <ul>
-                    {% for product in order.products.all %}
-                    <li>{{ product.name }} (x{{ product.orderproduct_set.first.quantity }})</li>
+                <span class="order-date">{{ order.created_at|date:"Y-m-d H:i" }}</span> -
+                <strong>Total: ${{ order.get_total_price }}</strong>
+
+                <ul class="order-products">
+                    {% for order_product in order.orderproduct_set.all %}
+                    <li class="order-product">
+                        <img src="{{ order_product.product.image.url }}" alt="{{ order_product.product.name }}" class="order-product-image">
+                        <span>{{ order_product.product.name }} (x{{ order_product.quantity }})</span>
+                    </li>
                     {% endfor %}
                 </ul>
+
+                <!-- Кнопка для повторного заказа -->
+                <form method="POST" action="{% url 'repeat_order' order.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="repeat-order-button">Repeat Order</button>
+                </form>
             </li>
             {% endfor %}
         </ul>

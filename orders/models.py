@@ -35,6 +35,7 @@ class Order(models.Model):
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     products = models.ManyToManyField(Product, through='OrderProduct', related_name='orders')
+    created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     order_date = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -43,5 +44,7 @@ class Order(models.Model):
     address = models.CharField(max_length=255, default="No address provided")
     recipient = models.CharField(max_length=100, default="No recipient provided")
 
+    def get_total_price(self):
+        return sum(item.product.price * item.quantity for item in self.orderproduct_set.all())
     def __str__(self):
         return f"Order #{self.id} by {self.user.username}"

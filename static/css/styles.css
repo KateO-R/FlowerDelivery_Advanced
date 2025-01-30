@@ -173,6 +173,14 @@ footer {
     color: #4a4a4a;
 }
 
+.order-product-image {
+    width: 100px;  /* Уменьшает ширину */
+    height: 100px; /* Фиксированная высота */
+    object-fit: cover; /* Обрезает изображение, сохраняя пропорции */
+    border-radius: 8px;  /* Закругляет углы */
+    display: block;  /* Убирает лишние отступы */
+}
+
 .order-status {
     font-weight: bold;
     color: #ff7f87; /* Ярко-розовый */

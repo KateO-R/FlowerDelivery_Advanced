@@ -48,3 +48,8 @@ class Order(models.Model):
         return sum(item.product.price * item.quantity for item in self.orderproduct_set.all())
     def __str__(self):
         return f"Order #{self.id} by {self.user.username}"
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    telegram_id = models.CharField(max_length=20, blank=True, null=True)  # Telegram ID

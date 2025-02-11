@@ -5,9 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .models import Product, CartItem, Order
-from .forms import OrderForm
+from .forms import OrderForm, SignUpForm
 
 
 def home(request):
@@ -15,14 +16,15 @@ def home(request):
     return render(request, 'orders/home.html', {'products': products})
 
 def signup(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+    if request.method == "POST":
+        form = SignUpForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('login')
+            user = form.save()
+            login(request, user)  # Автоматически логиним пользователя после регистрации
+            return redirect("profile")  # Перенаправляем в профиль
     else:
-        form = UserCreationForm()
-    return render(request, 'orders/signup.html', {'form': form})
+        form = SignUpForm()
+    return render(request, "orders/signup.html", {"form": form})
 
 @login_required
 def profile(request):

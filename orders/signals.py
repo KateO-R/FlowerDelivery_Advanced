@@ -9,6 +9,8 @@ def notify_order_created(order):
 @receiver(post_save, sender=Order)
 def notify_order_status_change(sender, instance, **kwargs):
     """Отправка уведомления при изменении статуса заказа."""
-    if instance.status_has_changed:  # Проверяем, изменился ли статус
-        from bot.bot import send_order_notification  # Перемещаем импорт внутрь функции
-        send_order_notification(instance)
+    if instance.pk:  # Проверяем, что заказ уже существует в базе
+        previous_order = Order.objects.filter(pk=instance.pk).first()
+        if previous_order and previous_order.status != instance.status:
+            from bot.bot import send_order_notification
+            send_order_notification(instance)

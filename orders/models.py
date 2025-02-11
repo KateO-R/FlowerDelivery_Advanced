@@ -32,6 +32,7 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ('in_progress', 'In Progress'),
         ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     products = models.ManyToManyField(Product, through='OrderProduct', related_name='orders')
@@ -50,6 +51,9 @@ class Order(models.Model):
         return f"Order #{self.id} by {self.user.username}"
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     phone_number = models.CharField(max_length=20, blank=True, null=True)
-    telegram_id = models.CharField(max_length=20, blank=True, null=True)  # Telegram ID
+    telegram_id = models.BigIntegerField(unique=True, blank=True, null=True)  # Telegram ID как число
+
+    def __str__(self):
+        return f"{self.user.username} - {self.phone_number}"

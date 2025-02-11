@@ -41,7 +41,16 @@ async def register(update: Update, context: CallbackContext):
         return
 
     phone_number = re.sub(r'\D', '', contact.phone_number)  # Удаляем пробелы и нецифровые символы
+    if phone_number.startswith("7"):
+        phone_number = "+7" + phone_number[1:]
 
+    elif phone_number.startswith("8"):
+        phone_number = "+7" + phone_number[1:]
+
+    elif len(phone_number) == 10:  # Если пришли только 10 цифр (например, "9028789229"), добавляем "+7"
+        phone_number = "+7" + phone_number
+
+    print(f"Searching for phone number: {phone_number}")
     try:
         user_obj = await sync_to_async(User.objects.select_related("profile").get)(profile__phone_number=phone_number)
 

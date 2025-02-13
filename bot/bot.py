@@ -13,7 +13,7 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "flowerdelivery.settings")  # Проверь название проекта!
 django.setup()
 
-from orders.models import Order
+from orders.models import Order, Profile
 from django.contrib.auth.models import User
 
 TOKEN = '7691200173:AAHmGl9Q3iXjddPohx3jleGowFsUwiUrSAw'
@@ -71,16 +71,32 @@ async def register(update: Update, context: CallbackContext):
 
 
 async def order_status(update: Update, context: CallbackContext):
-    """Retrieves the user's order status."""
+    """Send the user's order status using their linked Telegram ID."""
     user = update.message.from_user
-    orders = await sync_to_async(Order.objects.filter)(user__profile__telegram_id=user.id)
 
-    orders_exist = await sync_to_async(orders.exists)()
-    if orders_exist:
-        message = '\n'.join([f"Order #{order.id} - {order.status}" for order in orders])
-        await update.message.reply_text(message)
-    else:
-        await update.message.reply_text("No orders found.")
+    # Ищем профиль по Telegram ID + загружаем связанную модель User
+    try:
+        profile = await sync_to_async(Profile.objects.select_related("user").get)(telegram_id=user.id)
+    except Profile.DoesNotExist:
+        await update.message.reply_text("You are not registered. Please use /start and share your phone number first.")
+        return
+
+    # Проверяем, связан ли профиль с пользователем
+    if not profile.user:
+        await update.message.reply_text("Your profile is not linked to a user account.")
+        return
+
+    # Получаем заказы пользователя
+    orders = await sync_to_async(list)(Order.objects.filter(user=profile.user))
+
+    if not orders:
+        await update.message.reply_text("You have no orders.")
+        return
+
+    # Формируем сообщение со статусами заказов
+    message = '\n'.join([f"Order #{order.id} - {order.status}" for order in orders])
+
+    await update.message.reply_text(message)
 
 
 async def send_order_notification(order):

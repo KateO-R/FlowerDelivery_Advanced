@@ -1,6 +1,6 @@
 from django import forms
-from django.contrib.auth.models import User
-from .models import Order, Profile
+from django.contrib.auth.forms import UserCreationForm
+from .models import CustomUser, Order
 
 
 class OrderForm(forms.ModelForm):
@@ -12,6 +12,7 @@ class OrderForm(forms.ModelForm):
     ]
 
     time = forms.ChoiceField(choices=TIME_CHOICES, widget=forms.Select)
+
     class Meta:
         model = Order
         fields = [
@@ -21,21 +22,21 @@ class OrderForm(forms.ModelForm):
             'recipient',
         ]
         widgets = {
-            'delivery_date': forms.DateInput(attrs={'type': 'date'}),  # Включение HTML5 календаря
+            'delivery_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
-# Форма регистрации с добавлением номера телефона
-class SignUpForm(forms.ModelForm):
+
+class SignUpForm(UserCreationForm):  # Используем UserCreationForm для обработки пароля
     phone_number = forms.CharField(max_length=15, required=True, help_text="Enter your phone number")
+    address = forms.CharField(max_length=255, required=True, help_text="Enter your address")
 
     class Meta:
-        model = User
-        fields = ['username', 'email', 'password']
+        model = CustomUser
+        fields = ['email', 'username', 'phone_number', 'address', 'password1', 'password2']  # Оставляем два пароля для подтверждения
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data["password"])  # Устанавливаем пароль
+        user.set_password(self.cleaned_data["password1"])  # Устанавливаем пароль
         if commit:
             user.save()
-            Profile.objects.create(user=user, phone_number=self.cleaned_data["phone_number"])  # Создаем профиль
         return user

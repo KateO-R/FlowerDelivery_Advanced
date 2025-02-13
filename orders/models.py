@@ -1,6 +1,6 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-
+from django.conf import settings
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
@@ -12,12 +12,12 @@ class Product(models.Model):
         return self.name
 
 class CartItem(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Связь с пользователем
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Связь с пользователем
     product = models.ForeignKey(Product, on_delete=models.CASCADE)  # Связь с товаром
     quantity = models.PositiveIntegerField(default=1)  # Количество товара в корзине
 
     def __str__(self):
-        return f"{self.product.name} ({self.quantity}) for {self.user.username}"
+        return f"{self.product.name} ({self.quantity}) for {self.user.email}"
 
 class OrderProduct(models.Model):
     order = models.ForeignKey('Order', on_delete=models.CASCADE)
@@ -34,7 +34,7 @@ class Order(models.Model):
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     ]
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     products = models.ManyToManyField(Product, through='OrderProduct', related_name='orders')
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
@@ -48,12 +48,46 @@ class Order(models.Model):
     def get_total_price(self):
         return sum(item.product.price * item.quantity for item in self.orderproduct_set.all())
     def __str__(self):
-        return f"Order #{self.id} by {self.user.username}"
+        return f"Order #{self.id} by {self.user.email}"
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     telegram_id = models.BigIntegerField(unique=True, blank=True, null=True)  # Telegram ID как число
 
     def __str__(self):
-        return f"{self.user.username} - {self.phone_number}"
+        return f"{self.user.email} - {self.phone_number}"
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, phone_number, address, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, phone_number=phone_number, address=address, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, phone_number, address, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self.create_user(email, phone_number, address, password, **extra_fields)
+
+class CustomUser(AbstractUser):
+    email = models.EmailField(unique=True)
+    phone_number = models.CharField(max_length=20, unique=True)
+    address = models.CharField(max_length=255)
+
+    objects = CustomUserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['phone_number', 'address', 'username']
+
+    def __str__(self):
+        return self.email

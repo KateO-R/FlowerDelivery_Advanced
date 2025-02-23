@@ -26,16 +26,20 @@ class OrderForm(forms.ModelForm):
         }
 
 
-class SignUpForm(UserCreationForm):  # Используем UserCreationForm для обработки пароля
+class SignUpForm(UserCreationForm):
     phone_number = forms.CharField(max_length=15, required=True, help_text="Enter your phone number")
     address = forms.CharField(max_length=255, required=True, help_text="Enter your address")
+    email = forms.EmailField(required=True)
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'username', 'phone_number', 'address', 'password1', 'password2']  # Оставляем два пароля для подтверждения
+        fields = ['email', 'username', 'phone_number', 'address', 'password1', 'password2']
 
     def save(self, commit=True):
         user = super().save(commit=False)
+        user.email = self.cleaned_data["email"]
+        user.phone_number = self.cleaned_data["phone_number"]
+        user.address = self.cleaned_data["address"]
         user.set_password(self.cleaned_data["password1"])  # Устанавливаем пароль
         if commit:
             user.save()

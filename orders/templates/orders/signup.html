@@ -2,21 +2,38 @@
 
 {% block content %}
 <h2>Sign Up</h2>
+
 <form method="post">
     {% csrf_token %}
 
-    <label for="id_username">Username:</label>
-    {{ form.username }}
-
-    <label for="id_email">Email:</label>
-    {{ form.email }}
-
-    <label for="id_password">Password:</label>
-    {{ form.password }}
-
-    <label for="id_phone_number">Phone Number:</label>
-    {{ form.phone_number }}
+    {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+            {{ field }}
+            {% if field.help_text %}
+                <small style="color: gray;">{{ field.help_text }}</small>
+            {% endif %}
+            {% if field.errors %}
+                <ul class="errorlist">
+                    {% for error in field.errors %}
+                        <li style="color: red;">{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    {% endfor %}
 
     <button type="submit">Sign Up</button>
 </form>
+
+{% if form.non_field_errors %}
+    <div class="error-messages">
+        <ul>
+            {% for error in form.non_field_errors %}
+                <li style="color: red;">{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
 {% endblock %}

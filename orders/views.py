@@ -36,7 +36,6 @@ def product_list(request):
     products = Product.objects.all()
     return render(request, 'orders/product_list.html', {'products': products})
 
-
 @login_required
 def cart(request):
     cart_items = CartItem.objects.filter(user=request.user)  # Получаем товары в корзине текущего пользователя

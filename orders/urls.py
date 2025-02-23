@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
-from .views import repeat_order
+from .views import repeat_order, profile
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [

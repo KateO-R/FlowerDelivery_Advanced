@@ -1,39 +1,26 @@
 {% extends "orders/base.html" %}
 
 {% block content %}
-<h2>Sign Up</h2>
+<div class="signup-container">
+    <h2 class="signup-title">Sign Up</h2>
+    <form method="post" class="signup-form">
+        {% csrf_token %}
 
-<form method="post">
-    {% csrf_token %}
-
-    {% for field in form %}
+        {% for field in form %}
         <div class="form-group">
-            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}:</label>
             {{ field }}
-            {% if field.help_text %}
-                <small style="color: gray;">{{ field.help_text }}</small>
-            {% endif %}
             {% if field.errors %}
-                <ul class="errorlist">
+                <div class="error-messages">
                     {% for error in field.errors %}
-                        <li style="color: red;">{{ error }}</li>
+                        <p class="error-text">{{ error }}</p>
                     {% endfor %}
-                </ul>
+                </div>
             {% endif %}
         </div>
-    {% endfor %}
+        {% endfor %}
 
-    <button type="submit">Sign Up</button>
-</form>
-
-{% if form.non_field_errors %}
-    <div class="error-messages">
-        <ul>
-            {% for error in form.non_field_errors %}
-                <li style="color: red;">{{ error }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-{% endif %}
-
+        <button type="submit" class="signup-button">Sign Up</button>
+    </form>
+</div>
 {% endblock %}

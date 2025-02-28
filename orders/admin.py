@@ -35,7 +35,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'phone_number', 'telegram_id')
+    list_display = ('user', 'phone_number')
     search_fields = ('user__email', 'phone_number')
 
 

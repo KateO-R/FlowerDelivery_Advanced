@@ -14,8 +14,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "flowerdelivery.settings")  # П
 django.setup()
 
 from orders.models import Order, Profile
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 TOKEN = '7691200173:AAHmGl9Q3iXjddPohx3jleGowFsUwiUrSAw'
 bot = Bot(token=TOKEN)
 
@@ -51,6 +52,7 @@ async def register(update: Update, context: CallbackContext):
         phone_number = "+7" + phone_number
 
     print(f"Searching for phone number: {phone_number}")
+
     try:
         user_obj = await sync_to_async(User.objects.select_related("profile").get)(profile__phone_number=phone_number)
 

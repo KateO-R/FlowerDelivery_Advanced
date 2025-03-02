@@ -13,7 +13,7 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "flowerdelivery.settings")  # Проверь название проекта!
 django.setup()
 
-from orders.models import Order, Profile
+from orders.models import Order, CustomUser, Profile
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -54,23 +54,27 @@ async def register(update: Update, context: CallbackContext):
     print(f"Searching for phone number: {phone_number}")
 
     try:
-        user_obj = await sync_to_async(User.objects.select_related("profile").get)(profile__phone_number=phone_number)
+        user_obj = await sync_to_async(CustomUser.objects.get)(phone_number=phone_number)
 
-        if not hasattr(user_obj, "profile"):  # Проверяем, есть ли у пользователя профиль
+        profile_exists = await sync_to_async(Profile.objects.filter(user=user_obj).exists)()
+        if not profile_exists:
             await update.message.reply_text("Your account is missing a profile. Please contact support.")
             return
 
-        if not user_obj.profile.phone_number:  # Сохраняем номер, если его нет
-            user_obj.profile.phone_number = phone_number
-            await sync_to_async(user_obj.profile.save)()
+        profile = await sync_to_async(Profile.objects.get)(user=user_obj)
 
-        user_obj.profile.telegram_id = user.id  # Link Telegram ID to the user
-        await sync_to_async(user_obj.profile.save)()
+        if not profile.phone_number:
+            profile.phone_number = phone_number
+            await sync_to_async(profile.save)()
+
+        profile.telegram_id = user.id
+        await sync_to_async(profile.save)()
 
         await update.message.reply_text("Your Telegram account is linked successfully! You will receive order updates.")
-    except User.DoesNotExist:
-        await update.message.reply_text("Your phone number is not registered on our website. Please check your account.")
 
+    except CustomUser.DoesNotExist:
+        await update.message.reply_text(
+            "Your phone number is not registered on our website. Please check your account.")
 
 async def order_status(update: Update, context: CallbackContext):
     """Send the user's order status using their linked Telegram ID."""

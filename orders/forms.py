@@ -37,10 +37,10 @@ class SignUpForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.email = self.cleaned_data["email"]
         user.phone_number = self.cleaned_data["phone_number"]
         user.address = self.cleaned_data["address"]
         user.set_password(self.cleaned_data["password1"])  # Устанавливаем пароль
+
         if commit:
             user.save()
         return user

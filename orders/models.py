@@ -28,7 +28,7 @@ class CustomUserManager(BaseUserManager):
 class CustomUser(AbstractUser):
     #username = None  # Отключаем стандартное поле username
     email = models.EmailField(unique=True)
-    phone_number = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    phone_number = models.CharField(max_length=20, unique=True)
     address = models.CharField(max_length=255)
 
     objects = CustomUserManager()
@@ -89,13 +89,14 @@ class Order(models.Model):
         return f"Order #{self.id} by {self.user.email}"
 
 class Profile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="profile")
     phone_number = models.CharField(max_length=15, unique=True)
+    telegram_id = models.BigIntegerField(unique=True, blank=True, null=True)
 
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        Profile.objects.create(user=instance)
+        Profile.objects.create(user=instance, phone_number=instance.phone_number)
 
 @receiver(post_save, sender=CustomUser)
 def save_user_profile(sender, instance, **kwargs):

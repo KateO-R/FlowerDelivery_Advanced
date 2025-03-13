@@ -2,19 +2,24 @@ import os
 import sys
 import django
 import re
+import telegram
+
+print("Запуск bot.py")
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "flowerdelivery.settings")
+
+from django.apps import apps
+if not apps.ready:
+    django.setup()
+
 from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from asgiref.sync import sync_to_async
 from django.utils.timezone import localtime
 
-# ✅ Настройка Django
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "flowerdelivery.settings")
-django.setup()  # <-- ВАЖНО: Оставляем только здесь!
-
-# ✅ Импорт моделей Django ПОСЛЕ `setup()`
 from orders.models import Order, CustomUser, Profile
-from bot.bot_instance import bot, TOKEN
+from bot.bot_instance import get_bot  # ✅ Импортируем функцию get_bot
 
 async def start(update: Update, context: CallbackContext):
     """Запрос номера телефона"""
@@ -53,11 +58,42 @@ async def register(update: Update, context: CallbackContext):
     except CustomUser.DoesNotExist:
         await update.message.reply_text("Your phone number is not registered on our website. Please check your account.")
 
+async def order_status(update: Update, context: CallbackContext):
+    """Send the user's order status using their linked Telegram ID."""
+    user = update.message.from_user
+
+    # Ищем профиль по Telegram ID + загружаем связанную модель User
+    try:
+        profile = await sync_to_async(Profile.objects.select_related("user").get)(telegram_id=user.id)
+    except Profile.DoesNotExist:
+        await update.message.reply_text("You are not registered. Please use /start and share your phone number first.")
+        return
+
+    # Проверяем, связан ли профиль с пользователем
+    if not profile.user:
+        await update.message.reply_text("Your profile is not linked to a user account.")
+        return
+
+    # Получаем заказы пользователя
+    orders = await sync_to_async(list)(Order.objects.filter(user=profile.user))
+
+    if not orders:
+        await update.message.reply_text("You have no orders.")
+        return
+
+    # Формируем сообщение со статусами заказов
+    message = '\n'.join([f"Order #{order.id} - {order.status}" for order in orders])
+
+    await update.message.reply_text(message)
+
+
 def main():
     """Запуск бота"""
-    app = Application.builder().token(TOKEN).build()
+    bot = get_bot()
+    app = Application.builder().token(bot.token).build()
     app.add_handler(CommandHandler('start', start))
     app.add_handler(MessageHandler(filters.CONTACT, register))
+    app.add_handler(CommandHandler('status', order_status))
     print("Bot is running...")
     app.run_polling()
 

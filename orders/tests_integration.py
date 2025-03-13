@@ -39,7 +39,7 @@ class IntegrationTest(TestCase):
 
         # 🔍 Отладка: проверяем статус ответа и ошибки формы
         print("Response status:", response.status_code)
-        print("Response content:", response.content.decode("utf-8"))
+        print("Response URL:", response.request["PATH_INFO"])  # Покажет, на какой странице оказался пользователь
         print("Form errors:", response.context["form"].errors if response.context and "form" in response.context else "No form context")
 
         # Проверяем, что заказ создан

@@ -42,6 +42,7 @@ def cart(request):
     total_price = sum(item.product.price * item.quantity for item in cart_items)  # Общая сумма
     is_empty = cart_items.count() == 0  # Проверяем, пустая ли корзина
     message = None
+    form = OrderForm()
 
     # Интервалы доставки
     delivery_times = ['09:00-12:00', '12:00-15:00', '15:00-18:00', '18:00-21:00']
@@ -63,17 +64,13 @@ def cart(request):
                 OrderProduct.objects.create(order=order, product=item.product, quantity=item.quantity)
                 item.total_price = item.product.price * item.quantity
 
-            print("Cart items before delete:", cart_items)  # Отладка перед очисткой корзины
-            cart_items.delete()  # Очищаем корзину после оформления заказа
-            print("Cart items after delete:", CartItem.objects.filter(user=request.user))  # Проверяем очистку корзины
+            cart_items.delete()  # ✅ Очищаем корзину полностью
+            message = "Thank you for your order. Track its status in your profile or Telegram bot @Flowers_of_Emotions_bot."
 
-            message = "Thank you for your order. You can track its status in your profile or Telegram bot."
-            form = OrderForm()  # Сброс формы после успешного заказа
-        else:
-            # Если форма невалидна, логируем ошибки для отладки
-            print(form.errors)
-    else:
-        form = OrderForm()
+            return render(request, 'orders/cart.html', {
+                'message': message,  # ✅ Передаем только сообщение
+                'is_empty': True,  # ✅ Говорим шаблону, что корзина пустая
+            })
 
     return render(request, 'orders/cart.html', {
         'cart_items': cart_items,

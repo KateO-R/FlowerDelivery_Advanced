@@ -4,8 +4,11 @@
 <div class="cart-container">
     <h2 class="section-title">Best choice for best Emotions</h2>
 
-    {% if is_empty %}
-        <!-- Сообщение для пустой корзины -->
+    {% if message %}
+        <!-- Показываем сообщение о заказе, если оно есть -->
+        <p class="order-confirmation">{{ message }}</p>
+    {% elif is_empty %}
+        <!-- Показываем стандартное сообщение о пустой корзине -->
         <p class="empty-cart-message">Oops! Looks like you haven't chosen the best bouquet for your emotions yet.</p>
     {% else %}
         <!-- Товары в корзине -->
